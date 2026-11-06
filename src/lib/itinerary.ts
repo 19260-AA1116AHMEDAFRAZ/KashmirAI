@@ -7,6 +7,7 @@ import type { I18nText, ItineraryDay, Lang, Place, RoadUpdate } from '@/data/typ
 import { SEATS_PER_CAR } from './budget';
 import { geminiText } from './gemini';
 import { placeLine, roadLine } from './knowledge';
+import { withoutVerificationTalk } from './scrub';
 import type { PlanInput } from './plan';
 
 // The day-by-day plan on the Trip page ("Build my plan"), written by Gemini Flash (src/lib/gemini.ts)
@@ -93,7 +94,7 @@ function buildPrompt(plan: PlanInput, places: Place[], roads: RoadUpdate[], lang
     .join('\n');
 }
 
-const text = (v: unknown, max: number) => (typeof v === 'string' ? v.trim().replace(/\s+/g, ' ').slice(0, max) : '');
+const text = (v: unknown, max: number) => (typeof v === 'string' ? withoutVerificationTalk(v.trim().replace(/\s+/g, ' ').slice(0, max)) : '');
 function normaliseTime(v: unknown): string | null {
   const m = /^(\d{1,2})[:.](\d{2})$/.exec(typeof v === 'string' ? v.trim() : '');
   if (!m || Number(m[1]) > 23 || Number(m[2]) > 59) return null;

@@ -5,6 +5,7 @@ import { connection } from 'next/server';
 import type { Lang, Place, RoadUpdate } from '@/data/types';
 import { geminiText } from './gemini';
 import { roadLine } from './knowledge';
+import { withoutVerificationTalk } from './scrub';
 
 // The road banner on Discover, written by Gemini (src/lib/gemini.ts) from today's date, the season and
 // the team's own road updates (Admin → Roads), so no banner text is typed in by hand.
@@ -44,16 +45,16 @@ export async function buildRoadAdvisory(lang: Lang, places: Place[], roads: Road
     'You write the road-conditions banner on the home page of a travel app for visitors to Azad Jammu & Kashmir (Pakistan).',
     `Today is ${today}. Main destinations: ${places.map((p) => p.name.en).join(', ') || 'Neelum Valley, Rawalakot, Muzaffarabad'}.`,
     '',
-    'OUR TEAM\'S ROAD UPDATES (the only live information you have):',
+    'ROAD UPDATES (the only live information you have):',
     roads.length ? roads.map(roadLine).join('\n') : '- none at the moment',
     '',
     'Write ONE short advisory for travellers who are about to set out:',
     '- "title": at most 8 words.',
     '- "note": at most 35 words, practical.',
-    '- "level": "caution" if our road updates mention a slow or closed road, or if this time of year brings real risk on these mountain roads (for example landslides in the monsoon, snow or ice in winter, fog); otherwise "info".',
+    '- "level": "caution" if the road updates mention a slow or closed road, or if this time of year brings real risk on these mountain roads (for example landslides in the monsoon, snow or ice in winter, fog); otherwise "info".',
     '',
     'Rules:',
-    '- You do NOT have live road data. Say a specific road is open, slow or closed ONLY if it is in the team updates above (you may mention the update date if one is given). Never invent a road status, closure or date.',
+    '- You do NOT have live road data. Say a specific road is open, slow or closed ONLY if it is in the road updates above (you may mention the update date if one is given). Never invent a road status, closure or date.',
     '- Otherwise describe what this season usually brings on these roads, using words like "may" and "expect".',
     '- Always end the note by telling people to ask local people or check before travelling; in an emergency call Rescue 1122.',
     LANGUAGE_RULE[lang],
@@ -63,8 +64,8 @@ export async function buildRoadAdvisory(lang: Lang, places: Place[], roads: Road
   if (!raw) return null;
   try {
     const data = JSON.parse(raw);
-    const title = clean(data?.title, 90);
-    const note = clean(data?.note, 400);
+    const title = withoutVerificationTalk(clean(data?.title, 90));
+    const note = withoutVerificationTalk(clean(data?.note, 400));
     if (!title || !note) return null;
     const advisory: RoadAdvisory = { title, note, level: data?.level === 'caution' ? 'caution' : 'info', asOf: new Date().toISOString() };
     if (cache.size >= 50) cache.delete(cache.keys().next().value as string);

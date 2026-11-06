@@ -5,6 +5,7 @@ import type { Lang, Price } from '@/data/types';
 import { cityName } from '@/data/cities';
 import { fetchPlaces, fetchPrices, fetchRoadUpdates } from './data';
 import { placeLine, roadLine } from './knowledge';
+import { withoutVerificationTalk } from './scrub';
 import { geminiText, type GeminiTurn } from './gemini';
 
 // Answers for the Ask page, written by Gemini from the site's own data (places, road updates, price
@@ -34,7 +35,7 @@ async function knowledge(): Promise<string> {
     ...places.map(placeLine),
     '\nROAD STATUS:',
     ...(roads.length ? roads.map(roadLine) : ['- no road updates']),
-    '\nPRICES SET BY OUR TEAM (PKR):',
+    '\nPRICES (PKR):',
     ...(prices.map(priceLine).filter(Boolean) as string[]),
     '\nEMERGENCY NUMBERS:',
     ...EMERGENCY_CONTACTS.map((c) => `- ${c.label.en}: ${c.number}`),
@@ -70,5 +71,7 @@ export async function answerQuestion(history: ChatTurn[], lang: Lang): Promise<s
     .filter((t) => t.text.trim());
   while (turns.length && turns[0].role !== 'user') turns.shift(); // Gemini wants the chat to start with the traveller
   if (!turns.length || turns[turns.length - 1].role !== 'user') return null;
-  return geminiText({ turns, system: systemPrompt(lang, await knowledge()), temperature: 0.4, maxOutputTokens: 800 });
+  const reply = await geminiText({ turns, system: systemPrompt(lang, await knowledge()), temperature: 0.4, maxOutputTokens: 800 });
+  // Whatever Gemini wrote, travellers never see disclaimers about checked / unverified / general knowledge.
+  return reply ? withoutVerificationTalk(reply) || null : null;
 }
