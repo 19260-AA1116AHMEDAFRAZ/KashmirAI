@@ -1,5 +1,5 @@
 import Image from 'next/image';
-
+//brand
 // The KashmirAI logo image (public/icons/KashmirAI.png): mountains, lake and speech bubble on deep green.
 // Shown as a small rounded square next to the wordmark. It already has the dark green background.
 export function LogoMark({ size = 36 }: { size?: number }) {
