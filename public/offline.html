@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="en" dir="ltr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="theme-color" content="#15503C" />
+  <title>KashmirAI · Offline</title>
+  <link rel="icon" href="/favicon.ico" />
+  <!-- Shown by the service worker (public/sw.js) when a page can't be loaded without internet.
+       Self-contained on purpose: no app CSS, JS or web fonts, so it always works offline.
+       Text matches common.offline* in src/i18n/locales; the language comes from the same cookie. -->
+  <style>
+    :root { --deep: #15503c; --green: #2e7d57; --bg: #f4f2ec; --ink: #1b2621; --muted: #4a5a52; --line: #dce3de; }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; min-height: 100dvh; background: var(--bg); color: var(--ink); }
+    body { font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; display: flex; align-items: center; justify-content: center; padding: 24px; }
+    html[lang="ur"] body { line-height: 2; }
+    main { width: 100%; max-width: 420px; background: #fff; border: 1px solid var(--line); border-radius: 24px; padding: 32px 24px; text-align: center; }
+    .badge { display: inline-flex; align-items: center; gap: 10px; margin-bottom: 24px; direction: ltr; }
+    .badge span.mark { display: flex; width: 40px; height: 40px; align-items: center; justify-content: center; border-radius: 12px; background: var(--deep); }
+    .word { font-weight: 800; font-size: 20px; color: var(--deep); }
+    .word b { color: var(--green); font-weight: 800; }
+    h1 { font-size: 22px; margin: 0 0 8px; }
+    p { margin: 0 0 24px; color: var(--muted); font-size: 15px; line-height: 1.6; }
+    html[lang="ur"] p { line-height: 2; }
+    button { min-height: 48px; width: 100%; border: 0; border-radius: 14px; background: var(--deep); color: #fff; font: inherit; font-weight: 700; font-size: 16px; cursor: pointer; }
+    button:focus-visible { outline: 3px solid var(--green); outline-offset: 2px; }
+  </style>
+</head>
+<body>
+  <main>
+    <div class="badge">
+      <span class="mark">
+        <svg viewBox="0 0 24 24" width="22" height="22" fill="#D4A72C" aria-hidden="true"><path d="M12 2l2.2 6.6L21 11l-6.8 2.3L12 20l-2.2-6.7L3 11l6.8-2.4z" /></svg>
+      </span>
+      <span class="word">Kashmir<b>AI</b></span>
+    </div>
+    <h1 id="title">You're offline</h1>
+    <p id="body">This page needs an internet connection. It will open again by itself as soon as you're back online.</p>
+    <button id="retry" type="button">Try again</button>
+  </main>
+  <script>
+    (function () {
+      var TEXT = {
+        en: { title: "You're offline", body: "This page needs an internet connection. It will open again by itself as soon as you're back online.", retry: 'Try again' },
+        roman: { title: 'Aap offline hain', body: 'Is page ke liye internet zaroori hai. Internet wapas aate hi yeh khud khul jaye ga.', retry: 'Dobara koshish karein' },
+        ur: { title: 'آپ آف لائن ہیں', body: 'اس صفحے کے لیے انٹرنیٹ ضروری ہے۔ انٹرنیٹ واپس آتے ہی یہ خود کھل جائے گا۔', retry: 'دوبارہ کوشش کریں' },
+      };
+      var m = document.cookie.match(/(?:^|;\s*)kashmirai-lang=([^;]+)/);
+      var lang = m && TEXT[m[1]] ? m[1] : 'en';
+      var t = TEXT[lang];
+      document.documentElement.lang = lang;
+      document.documentElement.dir = lang === 'ur' ? 'rtl' : 'ltr';
+      document.getElementById('title').textContent = t.title;
+      document.getElementById('body').textContent = t.body;
+      document.getElementById('retry').textContent = t.retry;
+      document.title = 'KashmirAI · ' + t.title;
+
+      var reload = function () { location.reload(); };
+      document.getElementById('retry').addEventListener('click', reload);
+      window.addEventListener('online', reload);
+    })();
+  </script>
+</body>
+</html>
