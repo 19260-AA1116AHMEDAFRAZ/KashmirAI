@@ -2,6 +2,7 @@ import 'server-only';
 
 import type { User } from '@supabase/supabase-js';
 
+import { AJK_PLACES } from '@/data/ajk';
 import * as sample from '@/data/sample';
 import type { AdminPlace, ItineraryDay, Partner, PartnerRequest, Place, Price, RequestStatus, RoadUpdate } from '@/data/types';
 import { createClient } from '@/lib/supabase/server';
@@ -34,6 +35,19 @@ export async function fetchPlace(id: string): Promise<Place | null> {
   const { data, error } = await sb.from('places').select(PLACE_COLUMNS).eq('id', id).eq('active', true).maybeSingle();
   if (error) throw error;
   return data as Place | null;
+}
+
+// Every destination the Plan page offers: the places from the database first, then the rest of
+// Azad Kashmir from src/data/ajk.ts (a database place with the same id replaces the built-in one).
+export async function fetchPlanPlaces(): Promise<Place[]> {
+  const places = await fetchPlaces();
+  const have = new Set(places.map((p) => p.id));
+  return [...places, ...AJK_PLACES.filter((p) => !have.has(p.id))];
+}
+
+// One destination for the planner / trip page: from the database, else the built-in Azad Kashmir list.
+export async function fetchPlanPlace(id: string): Promise<Place | null> {
+  return (await fetchPlace(id)) ?? AJK_PLACES.find((p) => p.id === id) ?? null;
 }
 
 export async function fetchPartners(placeId: string): Promise<Partner[]> {

@@ -28,7 +28,7 @@ export default async function PartnersPage({ searchParams }: PageProps<'/partner
         title={t('partners.title')}
         subtitle={place ? pickText(place.name, lang) : placeId}
         back={
-          <Link href={`/place/${placeId}`} aria-label={t('partners.backToTrip')} className="flex h-11 w-11 items-center justify-center rounded-full border border-line bg-white hover:border-deep">
+          <Link href={place ? `/place/${placeId}` : '/discover'} aria-label={t('partners.backToTrip')} className="flex h-11 w-11 items-center justify-center rounded-full border border-line bg-white hover:border-deep">
             <Icon name="back" />
           </Link>
         }

@@ -6,17 +6,18 @@ import { useState } from 'react';
 import { Icon } from '@/components/Icon';
 import { PlaceHero } from '@/components/PlaceImage';
 import { cx, Tag } from '@/components/ui';
-import type { Place, PlaceType, Price } from '@/data/types';
+import type { Place, PlaceType } from '@/data/types';
 import { useT } from '@/i18n/provider';
-import { pickText } from '@/lib/format';
-import { budgetLabel } from '@/lib/budget';
+import { formatRs, pickText } from '@/lib/format';
+import { cardPlan, type Estimate } from '@/lib/budget';
 import { daysLabel } from '@/lib/placeText';
 
 type Filter = 'all' | PlaceType;
 const FILTERS: Filter[] = ['all', 'valley', 'lake', 'hilltop', 'town'];
 
 // Search box, type filters and the grid of place cards.
-export function DiscoverList({ places, prices }: { places: Place[]; prices: Price[] }) {
+// `estimates`: the example-trip price of each place from Gemini (null while it is still being worked out).
+export function DiscoverList({ places, estimates }: { places: Place[]; estimates: Record<string, Estimate | null> | null }) {
   const { t, lang } = useT();
   const [filter, setFilter] = useState<Filter>('all');
   const [query, setQuery] = useState('');
@@ -79,13 +80,14 @@ export function DiscoverList({ places, prices }: { places: Place[]; prices: Pric
                     <Icon name="cal" size={16} className="text-deep" />
                     {daysLabel(p, t)}
                   </span>
-                  <span>{budgetLabel(p, prices, lang, t)}</span>
+                  <span>{estimates === null ? t('common.loading') : estimates[p.id] ? t('place.budgetFor', { amount: formatRs(estimates[p.id]!.total, lang), people: cardPlan(p).people }) : t('common.priceNotSet')}</span>
                 </p>
               </div>
             </Link>
           </li>
         ))}
       </ul>
+      {estimates && <p className="text-xs text-muted">{t('discover.priceNote')}</p>}
     </section>
   );
 }

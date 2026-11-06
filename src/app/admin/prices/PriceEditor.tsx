@@ -6,7 +6,7 @@ import type { Price, PriceCategory } from '@/data/types';
 import { useT } from '@/i18n/provider';
 import { PEOPLE_PER_ROOM, SEATS_PER_CAR, SEATS_PER_JEEP, cardPlan, estimateTrip } from '@/lib/budget';
 import { PRICE_SLOTS, slotKey, type PriceDraft } from '@/lib/admin/drafts';
-import { CITIES, LIMITS, STYLES, type PlanInput } from '@/lib/plan';
+import { LIMITS, PRICE_CITIES, STYLES, type PlanInput } from '@/lib/plan';
 import { savePrices } from '../actions';
 import { Field, SaveBar, Section, Select, TextInput, useAdminAction } from '../_components/fields';
 import { rs } from '../_components/page';
@@ -106,7 +106,7 @@ export function PriceEditor({
           <span className="text-sm text-on-deep-muted">What the planner shows for this trip (before saving).</span>
         </div>
         <div className="grid grid-cols-2 gap-2 text-ink">
-          <Select aria-label="Starting city" value={example.city} onChange={(e) => setExample({ ...example, city: e.target.value as PlanInput['city'] })} options={CITIES.map((c) => ({ value: c, label: t(`cities.${c}`) }))} />
+          <Select aria-label="Starting city" value={example.city} onChange={(e) => setExample({ ...example, city: e.target.value as PlanInput['city'] })} options={PRICE_CITIES.map((c) => ({ value: c, label: t(`cities.${c}`) }))} />
           <Select aria-label="Style" value={example.style} onChange={(e) => setExample({ ...example, style: e.target.value as PlanInput['style'] })} options={STYLES.map((s) => ({ value: s, label: t(`planner.styles.${s}`) }))} />
           <Select
             aria-label="Days"

@@ -2,6 +2,7 @@
 
 import { useRef, useState, type FormEvent } from 'react';
 
+import { askKashmirAI } from '@/app/actions';
 import { Icon, Spark } from '@/components/Icon';
 import { Segmented } from '@/components/Segmented';
 import { Container } from '@/components/site/Container';
@@ -12,23 +13,36 @@ import { useT } from '@/i18n/provider';
 
 type Message = { id: number; me: boolean; lang: Lang; text: string };
 
-// Ask KashmirAI: a chat window. For now replies are a fixed "preview" message (as in the mobile
-// app); live answers from checked local data come in a later phase.
+// Ask KashmirAI: a chat window. Replies are written by Gemini on the server (askKashmirAI in
+// app/actions.ts) from the site's own places, road updates, prices and emergency numbers.
 export default function AskPage() {
   const { t, lang: appLang } = useT();
   // The reply language can differ from the site language.
   const [chatLang, setChatLang] = useState<Lang>(appLang);
   const [messages, setMessages] = useState<Message[]>([]);
   const [draft, setDraft] = useState('');
+  const [waiting, setWaiting] = useState(false);
   const listRef = useRef<HTMLDivElement>(null);
+  const lastId = useRef(0); // message ids (0 is the greeting)
   const tc = makeT(chatLang);
 
-  const send = (text: string) => {
+  const scrollDown = () => requestAnimationFrame(() => listRef.current?.scrollTo({ top: listRef.current.scrollHeight, behavior: 'smooth' }));
+
+  const send = async (text: string) => {
     const q = text.trim();
-    if (!q) return;
-    setMessages((m) => [...m, { id: Date.now(), me: true, lang: chatLang, text: q }, { id: Date.now() + 1, me: false, lang: chatLang, text: tc('ask.previewReply') }]);
+    if (!q || waiting) return;
+    const lang = chatLang;
+    const asked: Message[] = [...messages, { id: ++lastId.current, me: true, lang, text: q }];
+    setMessages(asked);
     setDraft('');
-    requestAnimationFrame(() => listRef.current?.scrollTo({ top: listRef.current.scrollHeight, behavior: 'smooth' }));
+    setWaiting(true);
+    scrollDown();
+    // Gemini sees the whole chat so far (not the greeting, which is only decoration).
+    const result = await askKashmirAI(asked.map((m) => ({ me: m.me, text: m.text })), lang).catch(() => ({ ok: false as const, error: 'failed' as const }));
+    const reply = result.ok ? result.reply : makeT(lang)(result.error === 'busy' ? 'ask.busy' : 'ask.error');
+    setMessages((m) => [...m, { id: ++lastId.current, me: false, lang, text: reply }]);
+    setWaiting(false);
+    scrollDown();
   };
   const onSubmit = (e: FormEvent) => {
     e.preventDefault();
@@ -80,6 +94,13 @@ export default function AskPage() {
               {m.text}
             </p>
           ))}
+          {waiting && (
+            <p role="status" aria-label={tc('ask.thinking')} className="flex items-center gap-1.5 self-start rounded-2xl rounded-es-md border border-line bg-white px-4 py-4">
+              {[0, 150, 300].map((delay) => (
+                <span key={delay} className="h-2 w-2 animate-bounce rounded-full bg-muted" style={{ animationDelay: `${delay}ms` }} />
+              ))}
+            </p>
+          )}
         </div>
 
         <div className="flex flex-col gap-3 border-t border-line p-4">
@@ -105,7 +126,7 @@ export default function AskPage() {
               dir={chatLang === 'ur' ? 'rtl' : 'ltr'}
               className={cx('h-12 flex-1 rounded-full border border-line bg-bg px-5 text-[15px] outline-none focus:border-green', chatLang === 'ur' && 'font-urdu')}
             />
-            <button type="submit" aria-label={t('ask.send')} className="flex h-12 w-12 items-center justify-center rounded-full bg-deep hover:opacity-90">
+            <button type="submit" disabled={waiting} aria-label={t('ask.send')} className="flex h-12 w-12 items-center justify-center rounded-full bg-deep hover:opacity-90 disabled:opacity-50">
               <Icon name="send" size={20} className="text-white" />
             </button>
           </form>

@@ -45,7 +45,7 @@ export default function TripsPage() {
 
   // One sample saved trip for now; real saved trips come with the trip-saving phase.
   const neelum = PLACES.find((p) => p.id === NEELUM_SAMPLE.placeId)!;
-  const sampleTrip = planQuery({ place: 'neelum', city: 'isb', days: NEELUM_SAMPLE.days, people: NEELUM_SAMPLE.people, style: 'budget' });
+  const sampleTrip = planQuery({ places: ['neelum'], city: 'isb', days: NEELUM_SAMPLE.days, people: NEELUM_SAMPLE.people, style: 'budget' });
 
   return (
     <Container>

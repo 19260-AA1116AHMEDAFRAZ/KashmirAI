@@ -1,4 +1,10 @@
-import { Spark } from './Icon';
+import Image from 'next/image';
+
+// The KashmirAI logo image (public/icons/KashmirAI.png): mountains, lake and speech bubble on deep green.
+// Shown as a small rounded square next to the wordmark. It already has the dark green background.
+export function LogoMark({ size = 36 }: { size?: number }) {
+  return <Image src="/icons/KashmirAI.png" alt="" width={size} height={size} priority className="shrink-0 rounded-xl" style={{ width: size, height: size }} />;
+}
 
 // "KashmirAI" wordmark: "Kashmir" in deep green, "AI" in green. Always Latin script.
 export function Logo({ size = 20 }: { size?: number }) {
@@ -13,9 +19,7 @@ export function Logo({ size = 20 }: { size?: number }) {
 export function LogoBadge() {
   return (
     <div className="absolute start-5 top-4 flex items-center gap-2.5 rounded-2xl bg-white py-1.5 ps-1.5 pe-3.5">
-      <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-deep">
-        <Spark size={22} />
-      </span>
+      <LogoMark size={40} />
       <Logo size={20} />
     </div>
   );

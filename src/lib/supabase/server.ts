@@ -2,6 +2,7 @@ import 'server-only';
 
 import { createServerClient } from '@supabase/ssr';
 import { cookies } from 'next/headers';
+import { connection } from 'next/server';
 
 import { SUPABASE_KEY, SUPABASE_URL, supabaseConfigured } from './config';
 
@@ -10,6 +11,9 @@ import { SUPABASE_KEY, SUPABASE_URL, supabaseConfigured } from './config';
 // Returns null in sample-data mode.
 export async function createClient() {
   if (!supabaseConfigured) return null;
+  // Supabase reads the clock (session expiry checks), which Next.js refuses during prerendering. Everything that
+  // talks to Supabase is per visitor anyway, so wait for a real request first.
+  await connection();
   const cookieStore = await cookies();
   return createServerClient(SUPABASE_URL, SUPABASE_KEY, {
     cookies: {

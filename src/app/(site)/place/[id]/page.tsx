@@ -7,7 +7,7 @@ import { PlaceHero } from '@/components/PlaceImage';
 import { Container } from '@/components/site/Container';
 import { Button, Card, Label } from '@/components/ui';
 import { getT } from '@/i18n/server';
-import { budgetLabel } from '@/lib/budget';
+import { cardBudgetText } from '@/lib/estimate';
 import { fetchPlace, fetchPrices, fetchRoadUpdates } from '@/lib/data';
 import { pickText } from '@/lib/format';
 import { daysLabel, googleMapsUrl } from '@/lib/placeText';
@@ -24,7 +24,7 @@ export default async function PlacePage({ params }: PageProps<'/place/[id]'>) {
   const facts: [string, string][] = [
     [t('place.bestTime'), pickText(place.best_season, lang) || t('common.notSet')],
     [t('place.idealStay'), daysLabel(place, t)],
-    [t('place.estBudget'), budgetLabel(place, prices, lang, t)],
+    [t('place.estBudget'), await cardBudgetText(place, prices, lang, t)],
     [t('place.signal'), pickText(place.signal_note, lang) || t('common.notSet')],
   ];
 

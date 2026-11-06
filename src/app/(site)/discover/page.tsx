@@ -1,21 +1,21 @@
 import Image from 'next/image';
 import Link from 'next/link';
+import { Suspense } from 'react';
 
 import { Icon, Spark } from '@/components/Icon';
-import { EstimatedNote, SampleDataNotice } from '@/components/Notes';
+import { SampleDataNotice } from '@/components/Notes';
 import { Container } from '@/components/site/Container';
 import { Button } from '@/components/ui';
 import { getT } from '@/i18n/server';
 import { fetchPlaces, fetchPrices, fetchRoadUpdates } from '@/lib/data';
-import { formatWhen, pickText } from '@/lib/format';
 import { DiscoverList } from './DiscoverList';
+import { RoadBanner, RoadBannerLoading } from './RoadBanner';
+import { PricedList } from './PricedList';
 
 // Discover: hero, road update, searchable grid of places and the partners call-out.
 export default async function DiscoverPage() {
   const { t, lang } = await getT();
   const [places, roads, prices] = await Promise.all([fetchPlaces(), fetchRoadUpdates(), fetchPrices()]);
-  // The road banner shows the newest update that has a note.
-  const road = roads.filter((r) => r.note).sort((a, b) => b.updated_at.localeCompare(a.updated_at))[0];
 
   return (
     <div>
@@ -41,20 +41,13 @@ export default async function DiscoverPage() {
       <Container className="flex flex-col gap-6 pt-8">
         <SampleDataNotice />
 
-        {road && (
-          <div className="flex gap-3 rounded-2xl border border-warn-border bg-warn-bg p-4 sm:p-5">
-            <Icon name="alert" className="mt-0.5 text-warn-title" />
-            <div className="flex flex-1 flex-col gap-1">
-              <p className="font-bold text-warn-title">{t('discover.roadUpdate', { segment: pickText(road.segment, lang) })}</p>
-              <p className="text-sm text-warn-text">
-                {pickText(road.note, lang)} {t('discover.updated', { when: formatWhen(road.updated_at, lang) })}
-              </p>
-              <EstimatedNote lastChecked={road.last_checked} sample={road.source === 'sample'} className="text-warn-text" />
-            </div>
-          </div>
-        )}
+        <Suspense fallback={<RoadBannerLoading />}>
+          <RoadBanner places={places} roads={roads} lang={lang} t={t} />
+        </Suspense>
 
-        <DiscoverList places={places} prices={prices} />
+        <Suspense fallback={<DiscoverList places={places} estimates={null} />}>
+          <PricedList places={places} prices={prices} />
+        </Suspense>
 
         <Link href="/partners?place=neelum" className="group flex flex-col items-start gap-4 rounded-3xl bg-deep p-6 text-white sm:flex-row sm:items-center sm:p-8">
           <span className="flex h-14 w-14 items-center justify-center rounded-2xl bg-white/15">

@@ -6,6 +6,12 @@ import { redirect } from 'next/navigation';
 
 import type { RequestStatus } from '@/data/types';
 import { isLang, LANG_COOKIE } from '@/i18n/config';
+import { answerQuestion } from '@/lib/ask';
+import type { Estimate } from '@/lib/budget';
+import { fetchPlanPlace, fetchPrices } from '@/lib/data';
+import { estimateForPlan } from '@/lib/estimate';
+import { locateCity as geoCity, locatePlace as geoPlace, type MapPoint } from '@/lib/geocode';
+import { planFromParams, type PlanInput } from '@/lib/plan';
 import { createClient } from '@/lib/supabase/server';
 
 // Server Functions: every change the site makes goes through here and runs as the signed-in
@@ -30,6 +36,45 @@ export async function signOut() {
   const sb = await createClient();
   await sb?.auth.signOut();
   redirect('/sign-in');
+}
+
+// The Plan page's automatic cost estimate (Gemini, falling back to the price list). The plan comes
+// from the browser, so it is cleaned up the same way as a plan in the address; null = no estimate.
+export async function estimateTripCost(plan: PlanInput): Promise<Estimate | null> {
+  const clean = planFromParams({ city: String(plan?.city), place: Array.isArray(plan?.places) ? plan.places.join(',') : '', days: String(plan?.days), people: String(plan?.people), style: String(plan?.style) });
+  const [places, prices] = await Promise.all([Promise.all(clean.places.map(fetchPlanPlace)), fetchPrices()]);
+  return estimateForPlan(clean, places.filter((p) => p !== null), prices);
+}
+
+// Plan page map: where a starting city / a destination is (OpenStreetMap search, remembered after the
+// first lookup; see src/lib/geocode.ts). null = not found, the map just leaves that pin out.
+export async function locateCity(id: string): Promise<MapPoint | null> {
+  return typeof id === 'string' ? geoCity(id) : null;
+}
+
+export async function locatePlace(id: string): Promise<MapPoint | null> {
+  const place = typeof id === 'string' ? await fetchPlanPlace(id) : null;
+  return place ? geoPlace(place) : null;
+}
+
+// Ask page: Gemini answers from the site's own data (src/lib/ask.ts). `history` ends with the
+// traveller's new question. Limited per person so one visitor can't run up the Gemini bill.
+const askLog = new Map<string, number[]>();
+const ASK_LIMIT = { count: 15, perMs: 60_000 };
+
+export async function askKashmirAI(history: { me: boolean; text: string }[], lang: string): Promise<{ ok: true; reply: string } | { ok: false; error: 'busy' | 'failed' }> {
+  if (!Array.isArray(history)) return { ok: false, error: 'failed' };
+  const sb = await createClient();
+  const who = (sb && (await sb.auth.getClaims()).data?.claims?.sub) || 'anonymous';
+  const now = Date.now();
+  const recent = (askLog.get(who) ?? []).filter((at) => now - at < ASK_LIMIT.perMs);
+  if (recent.length >= ASK_LIMIT.count) return { ok: false, error: 'busy' };
+  askLog.set(who, [...recent, now]);
+  if (askLog.size > 2000) askLog.delete(askLog.keys().next().value as string);
+
+  const turns = history.map((m) => ({ me: Boolean(m?.me), text: typeof m?.text === 'string' ? m.text : '' }));
+  const reply = await answerQuestion(turns, isLang(lang) ? lang : 'en');
+  return reply ? { ok: true, reply: reply.trim() } : { ok: false, error: 'failed' };
 }
 
 export type ActionResult = { ok: true } | { ok: false; error: string };

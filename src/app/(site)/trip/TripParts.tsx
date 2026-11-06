@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 
+import { Icon } from '@/components/Icon';
 import { Segmented } from '@/components/Segmented';
 import { Button, cx } from '@/components/ui';
 import type { ItineraryDay } from '@/data/types';
@@ -9,7 +10,8 @@ import { useT } from '@/i18n/provider';
 import { formatClock, pickText } from '@/lib/format';
 
 // Day tabs and the timeline for the chosen day.
-export function DayPlan({ days, itinerary }: { days: number; itinerary: ItineraryDay[] }) {
+// `ai`: the plan was written by Gemini for this trip (not the stored itinerary).
+export function DayPlan({ days, itinerary, ai }: { days: number; itinerary: ItineraryDay[]; ai?: boolean }) {
   const { t, lang } = useT();
   const [day, setDay] = useState(1);
   const today = itinerary.find((d) => d.day_number === day);
@@ -59,18 +61,64 @@ export function DayPlan({ days, itinerary }: { days: number; itinerary: Itinerar
         ) : (
           <p className="text-muted">{t('trip.noPlan')}</p>
         )}
+        {ai && (
+          <p className="mt-1 flex items-center gap-1.5 text-xs text-muted">
+            <Icon name="info" size={14} className="text-muted" />
+            {t('trip.aiPlan')}
+          </p>
+        )}
       </section>
     </>
   );
 }
 
-// "Save plan offline" toggle (real offline saving comes in a later phase).
-export function SaveOfflineButton() {
-  const { t } = useT();
-  const [saved, setSaved] = useState(false);
+// Every day of the plan, for the printed / PDF version only (the screen shows one day at a time).
+export function PrintDays({ itinerary, ai }: { itinerary: ItineraryDay[]; ai?: boolean }) {
+  const { t, lang } = useT();
   return (
-    <Button variant={saved ? 'soft' : 'outline'} icon="download" aria-pressed={saved} onClick={() => setSaved(!saved)} className="min-h-[52px] text-[15px]">
-      {saved ? t('trip.savedOffline') : t('trip.saveOffline')}
-    </Button>
+    <div className="hidden flex-col gap-5 print:flex">
+      {itinerary.map((d) => (
+        <section key={d.day_number} className="break-inside-avoid">
+          <h2 className="mb-2 border-b border-line pb-1 text-lg font-extrabold">{t('trip.dayTitle', { n: d.day_number, title: pickText(d.title, lang) })}</h2>
+          <ul className="flex flex-col gap-2">
+            {d.steps.map((s, i) => (
+              <li key={i} className="flex gap-3">
+                <span className="w-20 shrink-0 text-sm font-bold">{formatClock(s.time, lang)}</span>
+                <span className="flex flex-col">
+                  <span className="text-[15px] font-bold">{pickText(s.title, lang)}</span>
+                  <span className="text-[13px]">{pickText(s.note, lang)}</span>
+                </span>
+              </li>
+            ))}
+          </ul>
+        </section>
+      ))}
+      {ai && <p className="text-xs">{t('trip.aiPlan')}</p>}
+    </div>
+  );
+}
+
+// "Save plan as PDF": opens the browser's print window with the plan sheet, where "Save as PDF" is
+// the destination (this keeps Urdu text and its right-to-left layout correct, and the text selectable).
+// The page title becomes the PDF's file name while the window is open.
+export function SavePdfButton({ fileName }: { fileName: string }) {
+  const { t } = useT();
+  const save = () => {
+    const before = document.title;
+    const restore = () => {
+      document.title = before;
+      window.removeEventListener('afterprint', restore);
+    };
+    document.title = fileName;
+    window.addEventListener('afterprint', restore);
+    window.print();
+  };
+  return (
+    <div className="flex flex-col gap-2 print:hidden">
+      <Button variant="outline" icon="download" onClick={save} className="min-h-[52px] text-[15px]">
+        {t('trip.savePdf')}
+      </Button>
+      <p className="text-xs text-muted">{t('trip.pdfHint')}</p>
+    </div>
   );
 }

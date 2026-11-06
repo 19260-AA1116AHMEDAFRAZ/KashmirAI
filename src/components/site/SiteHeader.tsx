@@ -1,7 +1,7 @@
 import Link from 'next/link';
 
-import { Logo } from '../Brand';
-import { Icon, Spark } from '../Icon';
+import { Logo, LogoMark } from '../Brand';
+import { Icon } from '../Icon';
 import { Avatar, CountBadge } from '../ui';
 import { Container } from './Container';
 import { NavLinks } from './NavLinks';
@@ -19,12 +19,10 @@ export function SiteHeader({
   labels: { account: string; language: string; admin: string; nav: Record<string, string> };
 }) {
   return (
-    <header className="sticky top-0 z-30 border-b border-line bg-white/90 backdrop-blur">
+    <header className="sticky top-0 z-30 border-b border-line bg-white/90 backdrop-blur print:hidden">
       <Container className="flex h-16 items-center gap-6">
         <Link href="/discover" className="flex items-center gap-2.5" aria-label="KashmirAI">
-          <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-deep">
-            <Spark size={20} />
-          </span>
+          <LogoMark size={36} />
           <Logo size={20} />
         </Link>
 

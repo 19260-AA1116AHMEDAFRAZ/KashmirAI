@@ -7,10 +7,11 @@ import { Icon } from './Icon';
 
 // The "Estimated, check locally" line shown next to any price, road status or partner,
 // with when the data was last checked (or that it never was).
-export function EstimatedNote({ lastChecked, sample, className = 'text-muted' }: { lastChecked: string | null; sample?: boolean; className?: string }) {
+// `ai`: the estimate came from Gemini, so it has no "last checked" date.
+export function EstimatedNote({ lastChecked, sample, ai, className = 'text-muted' }: { lastChecked: string | null; sample?: boolean; ai?: boolean; className?: string }) {
   const { t, lang } = useT();
   const checked = lastChecked ? t('common.lastChecked', { date: formatDate(lastChecked, lang) }) : t('common.notChecked');
-  const parts = [t('common.estimated'), checked];
+  const parts = ai ? [t('planner.aiEstimate')] : [t('common.estimated'), checked];
   if (sample) parts.push(t('common.sample'));
   return (
     <p className={`flex items-center gap-1.5 text-xs ${className}`}>

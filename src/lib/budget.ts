@@ -1,11 +1,10 @@
-import type { Lang, Place, Price, PriceCategory } from '@/data/types';
-import type { TFunction } from '@/i18n/config';
-import { formatRs } from './format';
+import type { Place, Price, PriceCategory } from '@/data/types';
 import { DEFAULT_PLAN, type PlanInput } from './plan';
 
-// The trip budget calculator. Its only input is the `prices` table, which admins edit in
-// Admin → Trip prices, so a changed price shows up on Discover, the place page, the planner and
-// the trip page straight away. Works in Server and Client Components (no data loading here).
+// The price-list budget calculator. Its only input is the `prices` table, which admins edit in
+// Admin → Trip prices. The site shows Gemini's estimate first (src/lib/estimate.ts: Discover cards, place
+// page, planner, trip page) and uses this calculator when Gemini isn't available; the Admin → Trip prices
+// preview uses it directly. Works in Server and Client Components (no data loading here).
 //
 // How a trip is priced (each part rounded to the nearest Rs 100):
 //   transport = car round trip from the starting city × cars  +  jeep per day × jeep days × jeeps
@@ -24,6 +23,9 @@ export type Estimate = {
   split: BudgetSplit;
   // Oldest "last checked" date among the prices used, or null if any of them was never checked.
   lastChecked: string | null;
+  // 'ai' = estimated by Gemini (src/lib/estimate.ts), otherwise added up from the price list.
+  source?: 'ai' | 'prices';
+  note?: string; // Gemini's one-line assumption
 };
 
 const round100 = (n: number) => Math.round(n / 100) * 100;
@@ -78,12 +80,5 @@ export function estimateTrip(plan: PlanInput, place: Pick<Place, 'id' | 'jeep_da
 export function cardPlan(place: Pick<Place, 'id' | 'days_min' | 'days_max'>): PlanInput {
   const min = place.days_min ?? DEFAULT_PLAN.days;
   const max = place.days_max ?? min;
-  return { ...DEFAULT_PLAN, place: place.id, days: Math.min(max, Math.max(min, DEFAULT_PLAN.days)) };
-}
-
-// Budget line for cards: "Rs 38,000 · 2 ppl", or "Price not set yet".
-export function budgetLabel(place: Place, prices: Price[], lang: Lang, t: TFunction): string {
-  const plan = cardPlan(place);
-  const estimate = estimateTrip(plan, place, prices);
-  return estimate ? t('place.budgetFor', { amount: formatRs(estimate.total, lang), people: plan.people }) : t('common.priceNotSet');
+  return { ...DEFAULT_PLAN, places: [place.id], days: Math.min(max, Math.max(min, DEFAULT_PLAN.days)) };
 }

@@ -4,7 +4,7 @@ import { EMERGENCY_CONTACTS } from '@/data/sample';
 import type { Lang } from '@/data/types';
 import type { TFunction } from '@/i18n/config';
 import { pickText } from '@/lib/format';
-import { Logo } from '../Brand';
+import { Logo, LogoMark } from '../Brand';
 import { Icon } from '../Icon';
 import { Container } from './Container';
 import { NAV } from './nav';
@@ -12,10 +12,13 @@ import { NAV } from './nav';
 // Site footer: sections, emergency numbers and the "estimated" reminder.
 export function SiteFooter({ t, lang }: { t: TFunction; lang: Lang }) {
   return (
-    <footer className="mt-16 border-t border-line bg-white pb-24 md:pb-0">
+    <footer className="mt-16 border-t border-line bg-white pb-24 md:pb-0 print:hidden">
       <Container className="grid gap-8 py-10 sm:grid-cols-2 lg:grid-cols-4">
         <div className="flex flex-col gap-3 lg:col-span-2">
-          <Logo size={22} />
+          <span className="flex items-center gap-2.5">
+            <LogoMark size={36} />
+            <Logo size={22} />
+          </span>
           <p className="max-w-md text-sm text-muted">{t('welcome.intro')}</p>
           <p className="flex items-center gap-1.5 text-xs text-muted">
             <Icon name="info" size={14} className="text-muted" />

@@ -1,15 +1,18 @@
 import Link from 'next/link';
+import { Suspense } from 'react';
 
 import { Icon, Spark } from '@/components/Icon';
 import { EstimatedNote } from '@/components/Notes';
+import { Logo } from '@/components/Brand';
 import { Container, PageHeading } from '@/components/site/Container';
+import { cityName } from '@/data/cities';
 import { Button, Tag } from '@/components/ui';
 import { getT } from '@/i18n/server';
-import { estimateTrip } from '@/lib/budget';
-import { fetchItinerary, fetchPlace, fetchPrices } from '@/lib/data';
+import { fetchItinerary, fetchPlanPlace, fetchPrices } from '@/lib/data';
+import { estimateForPlan } from '@/lib/estimate';
 import { formatRs, pickText } from '@/lib/format';
 import { planFromParams, planQuery } from '@/lib/plan';
-import { DayPlan, SaveOfflineButton } from './TripParts';
+import { PlanLoading, PlannedDays } from './PlannedDays';
 
 // Colours of the four budget parts, from the prototype.
 const SPLIT_COLORS = { transport: '#F2D98A', stay: '#9CC1A8', food: '#CFE3EC', extras: '#FFFFFF' } as const;
@@ -18,9 +21,10 @@ type SplitKey = keyof typeof SPLIT_COLORS;
 // Trip & budget, built from the plan in the address (so it can be bookmarked or shared).
 export default async function TripPage({ searchParams }: PageProps<'/trip'>) {
   const plan = planFromParams(await searchParams);
-  const [{ t, lang }, place, itinerary, prices] = await Promise.all([getT(), fetchPlace(plan.place), fetchItinerary(plan.place), fetchPrices(plan.place)]);
-  const placeName = place ? pickText(place.name, lang) : plan.place;
-  const estimate = place ? estimateTrip(plan, place, prices) : null;
+  const [{ t, lang }, found, itinerary, prices] = await Promise.all([getT(), Promise.all(plan.places.map(fetchPlanPlace)), fetchItinerary(plan.places[0]), fetchPrices()]);
+  const places = found.filter((p) => p !== null);
+  const placeName = plan.places.map((id, i) => (found[i] ? pickText(found[i].name, lang) : id)).join(' + ');
+  const estimate = await estimateForPlan(plan, places, prices);
   const nights = Math.max(plan.days - 1, 0);
   const splitLabels: Record<SplitKey, string> = {
     transport: t('trip.transport'),
@@ -33,9 +37,9 @@ export default async function TripPage({ searchParams }: PageProps<'/trip'>) {
     <Container>
       <PageHeading
         title={t('trip.title', { place: placeName, days: plan.days })}
-        subtitle={t('trip.meta', { city: t(`cities.${plan.city}`), people: plan.people, style: t(`planner.styles.${plan.style}`) })}
+        subtitle={t('trip.meta', { city: cityName(plan.city, lang), people: plan.people, style: t(`planner.styles.${plan.style}`) })}
         back={
-          <Link href={`/plan?${planQuery(plan)}`} aria-label={t('trip.backToPlanner')} className="flex h-11 w-11 items-center justify-center rounded-full border border-line bg-white hover:border-deep">
+          <Link href={`/plan?${planQuery(plan)}`} aria-label={t('trip.backToPlanner')} className="flex h-11 w-11 items-center justify-center rounded-full border border-line bg-white hover:border-deep print:hidden">
             <Icon name="back" />
           </Link>
         }
@@ -43,13 +47,27 @@ export default async function TripPage({ searchParams }: PageProps<'/trip'>) {
 
       <div className="grid gap-8 lg:grid-cols-3">
         <div className="flex flex-col gap-5 lg:col-span-2">
-          <div className="rounded-3xl border border-line bg-white p-5 sm:p-6">
-            <DayPlan days={plan.days} itinerary={itinerary} />
-          </div>
-          <SaveOfflineButton />
+          {/* Printed / PDF version: the trip summary and budget (the days come from PlannedDays) */}
+          <section className="hidden flex-col gap-2 print:flex">
+            <Logo size={18} />
+            {estimate ? (
+              <>
+                <p className="text-xl font-extrabold">
+                  {t('trip.total')}: {formatRs(estimate.total, lang)} <span className="text-sm font-semibold">({t('trip.perPerson', { amount: formatRs(estimate.perPerson, lang) })})</span>
+                </p>
+                <p className="text-sm">{(Object.keys(splitLabels) as SplitKey[]).map((k) => `${splitLabels[k]}: ${formatRs(estimate.split[k], lang)}`).join(' · ')}</p>
+                <EstimatedNote lastChecked={estimate.lastChecked} ai={estimate.source === 'ai'} className="text-ink" />
+              </>
+            ) : (
+              <p className="font-bold">{t('common.priceNotSet')}</p>
+            )}
+          </section>
+          <Suspense fallback={<PlanLoading t={t} />}>
+            <PlannedDays plan={plan} places={places} stored={itinerary} lang={lang} fileName={`KashmirAI - ${placeName} - ${t('common.daysCount', { count: plan.days })}`} />
+          </Suspense>
         </div>
 
-        <aside className="flex flex-col gap-4 lg:sticky lg:top-24 lg:self-start">
+        <aside className="flex flex-col gap-4 lg:sticky lg:top-24 lg:self-start print:hidden">
           {/* Budget card */}
           <section className="flex flex-col gap-4 rounded-3xl bg-deep p-6 text-white">
             <div className="flex flex-col gap-0.5">
@@ -77,8 +95,8 @@ export default async function TripPage({ searchParams }: PageProps<'/trip'>) {
                 </dl>
               </>
             )}
-            <EstimatedNote lastChecked={estimate?.lastChecked ?? null} className="text-on-deep-muted" />
-            <Button href={`/partners?place=${plan.place}`} iconAfter="arrow" variant="light">
+            <EstimatedNote lastChecked={estimate?.lastChecked ?? null} ai={estimate?.source === 'ai'} className="text-on-deep-muted" />
+            <Button href={`/partners?place=${plan.places[0]}`} iconAfter="arrow" variant="light">
               {t('trip.book')}
             </Button>
           </section>

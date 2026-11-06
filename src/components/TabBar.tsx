@@ -14,7 +14,7 @@ export function TabBar() {
   const { t } = useT();
   const path = usePathname();
   return (
-    <nav aria-label="Main" className="fixed inset-x-0 bottom-0 z-30 flex items-center justify-around border-t border-line bg-white px-2 pt-2 pb-[max(env(safe-area-inset-bottom),12px)] md:hidden">
+    <nav aria-label="Main" className="fixed inset-x-0 bottom-0 z-30 flex items-center justify-around border-t border-line bg-white px-2 pt-2 pb-[max(env(safe-area-inset-bottom),12px)] md:hidden print:hidden">
       {NAV.map((tab) => {
         const on = isActive(path, tab.href);
         return (

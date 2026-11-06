@@ -67,3 +67,14 @@ html[lang="ur"] body {
 input::placeholder {
   color: var(--color-placeholder);
 }
+
+/* "Save plan as PDF" prints the plan sheet: A4 margins and a white page. */
+@media print {
+  @page {
+    margin: 14mm;
+  }
+  html,
+  body {
+    background: #fff;
+  }
+}

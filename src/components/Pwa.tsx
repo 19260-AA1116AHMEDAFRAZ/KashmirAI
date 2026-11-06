@@ -29,7 +29,7 @@ export function OfflineBanner() {
   return (
     <div
       role="status"
-      className="fixed inset-x-4 bottom-[calc(max(env(safe-area-inset-bottom),12px)+76px)] z-40 mx-auto w-fit max-w-md rounded-2xl bg-ink px-4 py-2.5 text-center text-sm font-semibold text-white shadow-lg md:bottom-6"
+      className="fixed inset-x-4 bottom-[calc(max(env(safe-area-inset-bottom),12px)+76px)] z-40 mx-auto w-fit max-w-md rounded-2xl bg-ink px-4 py-2.5 text-center text-sm font-semibold text-white shadow-lg md:bottom-6 print:hidden"
     >
       {t('common.offline')}
     </div>
