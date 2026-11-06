@@ -67,7 +67,7 @@ function buildPrompt(plan: PlanInput, places: Place[], roads: RoadUpdate[], lang
     `- Travellers: ${plan.people}`,
     `- Style: ${plan.style} (${STYLE_HINT[plan.style]})`,
     '',
-    `WHAT WE KNOW ABOUT THE PLACE${many ? 'S' : ''} (our checked local data, prefer it):`,
+    `WHAT WE KNOW ABOUT THE PLACE${many ? 'S' : ''} (our local data, prefer it):`,
     places.map(placeLine).join('\n'),
     '',
     'ROAD STATUS:',

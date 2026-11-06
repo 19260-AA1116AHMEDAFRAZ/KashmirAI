@@ -10,7 +10,7 @@ import { roadLine } from './knowledge';
 // the team's own road updates (Admin → Roads), so no banner text is typed in by hand.
 //
 // Gemini has NO live road information. It is told to state a road's condition only when it comes from
-// the team's road updates (and then say when that was checked); otherwise to talk about what the
+// the team's road updates (and may mention its update date); otherwise to talk about what the
 // season usually brings and to send travellers to local people and Rescue 1122.
 
 export type RoadAdvisory = { title: string; note: string; level: 'info' | 'caution'; asOf: string };
@@ -53,7 +53,7 @@ export async function buildRoadAdvisory(lang: Lang, places: Place[], roads: Road
     '- "level": "caution" if our road updates mention a slow or closed road, or if this time of year brings real risk on these mountain roads (for example landslides in the monsoon, snow or ice in winter, fog); otherwise "info".',
     '',
     'Rules:',
-    '- You do NOT have live road data. Say a specific road is open, slow or closed ONLY if it is in the team updates above, and then say when it was checked. Never invent a road status, closure or date.',
+    '- You do NOT have live road data. Say a specific road is open, slow or closed ONLY if it is in the team updates above (you may mention the update date if one is given). Never invent a road status, closure or date.',
     '- Otherwise describe what this season usually brings on these roads, using words like "may" and "expect".',
     '- Always end the note by telling people to ask local people or check before travelling; in an emergency call Rescue 1122.',
     LANGUAGE_RULE[lang],
