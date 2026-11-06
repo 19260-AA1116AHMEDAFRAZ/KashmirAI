@@ -12,7 +12,7 @@
  *
  * Bump VERSION to drop all old caches on the next visit.
  */
-const VERSION = 'v1';
+const VERSION = 'v2'; // v2: new KashmirAI logo icons (old caches are dropped on the next visit)
 const SHELL_CACHE = `kashmirai-shell-${VERSION}`;
 const STATIC_CACHE = `kashmirai-static-${VERSION}`;
 const MEDIA_CACHE = `kashmirai-media-${VERSION}`;

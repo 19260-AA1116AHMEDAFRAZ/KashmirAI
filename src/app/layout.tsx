@@ -15,7 +15,7 @@ export const metadata: Metadata = {
   applicationName: 'KashmirAI',
   // Installable app (see app/manifest.ts and public/sw.js). iOS reads these instead of the manifest.
   appleWebApp: { capable: true, title: 'KashmirAI', statusBarStyle: 'default' },
-  icons: { apple: '/icons/apple-touch-icon.png' },
+  icons: { apple: '/icons/apple-touch-icon.png?v=2' },
 };
 
 export const viewport: Viewport = { themeColor: '#15503C', width: 'device-width', initialScale: 1 };
